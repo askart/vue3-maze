@@ -1,23 +1,25 @@
 <script>
-import { makeGrid, getDirections, VALUE, DX, DY, OPPOSITE } from "./utils";
+import { reactive } from "@vue/reactivity";
+
 export default {
-  data() {
-    return {
-      height: 10,
-      width: 15,
+  setup() {
+    const height = 10;
+    const width = 15;
+    const DX = { E: 1, W: -1, N: 0, S: 0 };
+    const DY = { E: 0, W: 0, N: -1, S: 1 };
+    const VALUE = { N: 1, S: 2, E: 4, W: 8 };
+    const OPPOSITE = { E: "W", W: "E", N: "S", S: "N" };
+
+    const state = reactive({
       jointMatrix: [],
       gridAnimation: false,
-    };
-  },
-  created() {
-    this.initMaze();
-  },
-  methods: {
-    initMaze() {
-      let jointMatrix = [];
-      for (let y = 1; y < this.height; y++) {
+    });
+
+    const initMaze = () => {
+      const jointMatrix = [];
+      for (let y = 1; y < height; y++) {
         jointMatrix[y - 1] = [];
-        for (let x = 1; x < this.width; x++) {
+        for (let x = 1; x < width; x++) {
           jointMatrix[y - 1][x - 1] = {
             W: false,
             N: false,
@@ -26,48 +28,68 @@ export default {
           };
         }
       }
-      this.jointMatrix = jointMatrix;
+      state.jointMatrix = jointMatrix;
       setTimeout(() => {
-        this.buildMaze();
-        this.gridAnimation = true;
+        buildMaze();
+        state.gridAnimation = true;
       }, 1000);
-    },
-    buildMaze() {
-      let grid = this.makePath();
-      this.drawMaze(grid);
+    };
+
+    const buildMaze = () => {
+      const grid = makePath();
+      drawMaze(grid);
       setTimeout(() => {
-        this.buildMaze();
+        buildMaze();
       }, 5000);
-    },
-    makePath() {
-      let grid = makeGrid(this.height, this.width, 0);
-      return this.makePathDepth(0, 0, grid);
-    },
-    makePathDepth(cx, cy, grid) {
-      let directions = getDirections();
+    };
+
+    const makePath = () => {
+      const grid = makeGrid(height, width, 0);
+      return makePathDepth(0, 0, grid);
+    };
+
+    const makeGrid = (height, width, val) => {
+      return Array.from(Array(height), () => new Array(width).fill(val));
+    };
+
+    const makePathDepth = (cx, cy, grid) => {
+      const directions = getDirections();
       directions.forEach((dir) => {
-        let nx = cx + DX[dir],
+        const nx = cx + DX[dir],
           ny = cy + DY[dir];
         if (
           ny >= 0 &&
-          ny < this.height &&
+          ny < height &&
           nx >= 0 &&
-          nx < this.width &&
+          nx < width &&
           grid[ny][nx] == 0
         ) {
           grid[cy][cx] |= VALUE[dir];
           grid[ny][nx] |= VALUE[OPPOSITE[dir]];
-          this.makePathDepth(nx, ny, grid);
+          makePathDepth(nx, ny, grid);
         }
       });
       return grid;
-    },
-    drawMaze(grid) {
-      let jointMatrix = [];
-      for (let y = 1; y < this.height; y++) {
+    };
+
+    const getDirections = () => {
+      return shuffle(["N", "S", "E", "W"]);
+    };
+
+    const shuffle = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+
+    const drawMaze = (grid) => {
+      const jointMatrix = [];
+      for (let y = 1; y < height; y++) {
         jointMatrix[y - 1] = [];
-        for (let x = 1; x < this.width; x++) {
-          let joint = {};
+        for (let x = 1; x < width; x++) {
+          const joint = {};
           joint.W = (grid[y - 1][x - 1] & VALUE["S"]) == 0;
           joint.N = (grid[y - 1][x - 1] & VALUE["E"]) == 0;
           joint.E = (grid[y][x] & VALUE["N"]) == 0;
@@ -75,15 +97,21 @@ export default {
           jointMatrix[y - 1][x - 1] = joint;
         }
       }
-      this.jointMatrix = jointMatrix;
-    },
+      state.jointMatrix = jointMatrix;
+    };
+
+    initMaze();
+
+    return {
+      state,
+    };
   },
 };
 </script>
 
 <template>
   <div class="grid">
-    <div v-for="(row, y) in jointMatrix" :key="y" class="grid__row">
+    <div v-for="(row, y) in state.jointMatrix" :key="y" class="grid__row">
       <div v-for="(joint, x) in row" :key="x" class="grid__joint">
         <div :class="['grid__joint__line--top', { hidden: !joint.N }]" />
         <div :class="['grid__joint__line--right', { hidden: !joint.E }]" />
@@ -94,25 +122,25 @@ export default {
     <div
       :class="[
         'grid__border--top',
-        { 'grid__border--top--animated': gridAnimation },
+        { 'grid__border--top--animated': state.gridAnimation },
       ]"
     />
     <div
       :class="[
         'grid__border--right',
-        { 'grid__border--right--animated': gridAnimation },
+        { 'grid__border--right--animated': state.gridAnimation },
       ]"
     />
     <div
       :class="[
         'grid__border--bottom',
-        { 'grid__border--bottom--animated': gridAnimation },
+        { 'grid__border--bottom--animated': state.gridAnimation },
       ]"
     />
     <div
       :class="[
         'grid__border--left',
-        { 'grid__border--left--animated': gridAnimation },
+        { 'grid__border--left--animated': state.gridAnimation },
       ]"
     />
   </div>
@@ -186,9 +214,9 @@ $gray-dark: darken(lightgray, 50%);
   }
   &__row {
     display: flex;
-    &:first-child > .grid__joint {
-      margin-top: $length;
-    }
+  }
+  &__row:first-child > &__joint {
+    margin-top: $length;
   }
   &__joint {
     display: inline-block;
