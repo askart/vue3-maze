@@ -1,18 +1,27 @@
 <script>
 import { reactive } from "@vue/reactivity";
+import Grid from "./Grid.vue";
 
 export default {
+  components: {
+    Grid,
+  },
   setup() {
     const height = 10;
     const width = 15;
-    const DX = { E: 1, W: -1, N: 0, S: 0 };
-    const DY = { E: 0, W: 0, N: -1, S: 1 };
-    const VALUE = { N: 1, S: 2, E: 4, W: 8 };
-    const OPPOSITE = { E: "W", W: "E", N: "S", S: "N" };
+    const DX = { RIGHT: 1, LEFT: -1, TOP: 0, BOTTOM: 0 };
+    const DY = { RIGHT: 0, LEFT: 0, TOP: -1, BOTTOM: 1 };
+    const VALUE = { TOP: 1, BOTTOM: 2, RIGHT: 4, LEFT: 8 };
+    const OPPOSITE = {
+      RIGHT: "LEFT",
+      LEFT: "RIGHT",
+      TOP: "BOTTOM",
+      BOTTOM: "TOP",
+    };
 
     const state = reactive({
       jointMatrix: [],
-      gridAnimation: false,
+      hidden: false,
     });
 
     const initMaze = () => {
@@ -21,17 +30,17 @@ export default {
         jointMatrix[y - 1] = [];
         for (let x = 1; x < width; x++) {
           jointMatrix[y - 1][x - 1] = {
-            W: false,
-            N: false,
-            E: false,
-            S: false,
+            LEFT: false,
+            TOP: false,
+            RIGHT: false,
+            BOTTOM: false,
           };
         }
       }
       state.jointMatrix = jointMatrix;
       setTimeout(() => {
         buildMaze();
-        state.gridAnimation = true;
+        state.hidden = true;
       }, 1000);
     };
 
@@ -73,7 +82,7 @@ export default {
     };
 
     const getDirections = () => {
-      return shuffle(["N", "S", "E", "W"]);
+      return shuffle(["TOP", "BOTTOM", "RIGHT", "LEFT"]);
     };
 
     const shuffle = (array) => {
@@ -90,10 +99,10 @@ export default {
         jointMatrix[y - 1] = [];
         for (let x = 1; x < width; x++) {
           const joint = {};
-          joint.W = (grid[y - 1][x - 1] & VALUE["S"]) == 0;
-          joint.N = (grid[y - 1][x - 1] & VALUE["E"]) == 0;
-          joint.E = (grid[y][x] & VALUE["N"]) == 0;
-          joint.S = (grid[y][x] & VALUE["W"]) == 0;
+          joint.LEFT = (grid[y - 1][x - 1] & VALUE["BOTTOM"]) == 0;
+          joint.TOP = (grid[y - 1][x - 1] & VALUE["RIGHT"]) == 0;
+          joint.RIGHT = (grid[y][x] & VALUE["TOP"]) == 0;
+          joint.BOTTOM = (grid[y][x] & VALUE["LEFT"]) == 0;
           jointMatrix[y - 1][x - 1] = joint;
         }
       }
@@ -110,176 +119,5 @@ export default {
 </script>
 
 <template>
-  <div class="grid">
-    <div v-for="(row, y) in state.jointMatrix" :key="y" class="grid__row">
-      <div v-for="(joint, x) in row" :key="x" class="grid__joint">
-        <div :class="['grid__joint__line--top', { hidden: !joint.N }]" />
-        <div :class="['grid__joint__line--right', { hidden: !joint.E }]" />
-        <div :class="['grid__joint__line--bottom', { hidden: !joint.S }]" />
-        <div :class="['grid__joint__line--left', { hidden: !joint.W }]" />
-      </div>
-    </div>
-    <div
-      :class="[
-        'grid__border--top',
-        { 'grid__border--top--animated': state.gridAnimation },
-      ]"
-    />
-    <div
-      :class="[
-        'grid__border--right',
-        { 'grid__border--right--animated': state.gridAnimation },
-      ]"
-    />
-    <div
-      :class="[
-        'grid__border--bottom',
-        { 'grid__border--bottom--animated': state.gridAnimation },
-      ]"
-    />
-    <div
-      :class="[
-        'grid__border--left',
-        { 'grid__border--left--animated': state.gridAnimation },
-      ]"
-    />
-  </div>
+  <Grid :joint-matrix="state.jointMatrix" :hidden="state.hidden" />
 </template>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
-$vertical-cells-count: 10;
-$horizontal-cells-count: 15;
-$thickness: 2px;
-$length: 50px - $thickness;
-$offset: $thickness;
-$top-bottom-border-length: ($length * ($horizontal-cells-count - 1)) +
-  ($thickness * ($horizontal-cells-count - 1));
-$left-right-border-length: ($length * $vertical-cells-count) +
-  ($thickness * ($vertical-cells-count - 1));
-$gray-dark: darken(lightgray, 50%);
-.grid {
-  flex: 0 1 auto;
-  position: relative;
-  background-color: white;
-  &__border {
-    &--top {
-      position: absolute;
-      top: 0;
-      right: 0;
-      height: $thickness;
-      width: $thickness;
-      background-color: $gray-dark;
-      transition: 0.5s all ease-in-out;
-      &--animated {
-        width: $top-bottom-border-length;
-      }
-    }
-    &--right {
-      position: absolute;
-      top: 0;
-      right: 0;
-      height: $thickness;
-      width: $thickness;
-      background-color: $gray-dark;
-      transition: 0.5s all ease-in-out;
-      &--animated {
-        height: $left-right-border-length;
-      }
-    }
-    &--bottom {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: $thickness;
-      width: $thickness;
-      background-color: $gray-dark;
-      transition: 0.5s all ease-in-out;
-      &--animated {
-        width: $top-bottom-border-length;
-      }
-    }
-    &--left {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: $thickness;
-      width: $thickness;
-      background-color: $gray-dark;
-      transition: 0.5s all ease-in-out;
-      &--animated {
-        height: $left-right-border-length;
-      }
-    }
-  }
-  &__row {
-    display: flex;
-  }
-  &__row:first-child > &__joint {
-    margin-top: $length;
-  }
-  &__joint {
-    display: inline-block;
-    position: relative;
-    height: $thickness;
-    width: $thickness;
-    background-color: $gray-dark;
-    margin: 0 $length $length 0;
-    &:first-child {
-      margin-left: $length;
-    }
-    &__line--top {
-      position: absolute;
-      top: 0;
-      left: $offset;
-      height: $length;
-      width: $thickness;
-      background-color: $gray-dark;
-      transform-origin: 0px 0px;
-      transform: rotate(180deg);
-      transition: 0.5s all ease-in-out;
-      &.hidden {
-        height: 0px;
-      }
-    }
-    &__line--right {
-      position: absolute;
-      top: 0;
-      left: $offset;
-      height: $thickness;
-      width: $length;
-      background-color: $gray-dark;
-      transition: 0.5s all ease-in-out;
-      &.hidden {
-        width: 0px;
-      }
-    }
-    &__line--bottom {
-      position: absolute;
-      top: $offset;
-      left: 0;
-      height: $length;
-      width: $thickness;
-      background-color: $gray-dark;
-      transition: 0.5s all ease-in-out;
-      &.hidden {
-        height: 0px;
-      }
-    }
-    &__line--left {
-      position: absolute;
-      top: $offset;
-      left: 0;
-      height: $thickness;
-      width: $length;
-      background-color: $gray-dark;
-      transform-origin: 0 0;
-      transform: rotate(180deg);
-      transition: 0.5s all ease-in-out;
-      &.hidden {
-        width: 0px;
-      }
-    }
-  }
-}
-</style>
