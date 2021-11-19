@@ -22,13 +22,13 @@ export default {
 
 <style scoped lang="scss">
 $dot-size: v-bind(dotSize);
-$mazeColor: v-bind(mazeColor);
+$maze-color: v-bind(mazeColor);
 
 .grid-joint {
   position: relative;
   display: inline-block;
   height: $dot-size;
   width: $dot-size;
-  background-color: $mazeColor;
+  background-color: $maze-color;
 }
 </style>

@@ -1,5 +1,6 @@
 <script>
-import { reactive } from "@vue/reactivity";
+import { computed, reactive } from "@vue/reactivity";
+import { onBeforeUnmount } from "@vue/runtime-core";
 import Grid from "./Grid.vue";
 
 export default {
@@ -7,8 +8,6 @@ export default {
     Grid,
   },
   setup() {
-    const height = 10;
-    const width = 15;
     const DX = { RIGHT: 1, LEFT: -1, TOP: 0, BOTTOM: 0 };
     const DY = { RIGHT: 0, LEFT: 0, TOP: -1, BOTTOM: 1 };
     const VALUE = { TOP: 1, BOTTOM: 2, RIGHT: 4, LEFT: 8 };
@@ -20,11 +19,20 @@ export default {
     };
 
     const state = reactive({
+      height: 10,
+      width: 10,
       jointMatrix: [],
       hidden: false,
+      dotSizeInPixels: "2px",
     });
 
-    const initMaze = () => {
+    const cellSizeInPixels = computed(
+      () => `calc(40px - ${state.dotSizeInPixels})`
+    );
+
+    let initMazeTimeout, buildMazeTimeout;
+
+    const initMaze = (height, width) => {
       const jointMatrix = [];
       for (let y = 1; y < height; y++) {
         jointMatrix[y - 1] = [];
@@ -38,30 +46,37 @@ export default {
         }
       }
       state.jointMatrix = jointMatrix;
-      setTimeout(() => {
-        buildMaze();
+      initMazeTimeout = setTimeout(() => {
+        buildMaze(height, width);
         state.hidden = true;
       }, 1000);
     };
 
-    const buildMaze = () => {
-      const grid = makePath();
-      drawMaze(grid);
-      setTimeout(() => {
-        buildMaze();
+    const buildMaze = (height, width) => {
+      const grid = makePath(height, width);
+      drawMaze(grid, height, width);
+      buildMazeTimeout = setTimeout(() => {
+        buildMaze(height, width);
       }, 5000);
     };
 
-    const makePath = () => {
+    onBeforeUnmount(() => {
+      clearTimeout(initMazeTimeout);
+      initMazeTimeout = null;
+      clearTimeout(buildMazeTimeout);
+      buildMazeTimeout = null;
+    });
+
+    const makePath = (height, width) => {
       const grid = makeGrid(height, width, 0);
-      return makePathDepth(0, 0, grid);
+      return makePathDepth(0, 0, grid, height, width);
     };
 
     const makeGrid = (height, width, val) => {
       return Array.from(Array(height), () => new Array(width).fill(val));
     };
 
-    const makePathDepth = (cx, cy, grid) => {
+    const makePathDepth = (cx, cy, grid, height, width) => {
       const directions = getDirections();
       directions.forEach((dir) => {
         const nx = cx + DX[dir],
@@ -75,7 +90,7 @@ export default {
         ) {
           grid[cy][cx] |= VALUE[dir];
           grid[ny][nx] |= VALUE[OPPOSITE[dir]];
-          makePathDepth(nx, ny, grid);
+          makePathDepth(nx, ny, grid, height, width);
         }
       });
       return grid;
@@ -93,7 +108,7 @@ export default {
       return array;
     };
 
-    const drawMaze = (grid) => {
+    const drawMaze = (grid, height, width) => {
       const jointMatrix = [];
       for (let y = 1; y < height; y++) {
         jointMatrix[y - 1] = [];
@@ -109,15 +124,23 @@ export default {
       state.jointMatrix = jointMatrix;
     };
 
-    initMaze();
+    initMaze(state.height, state.width);
 
     return {
       state,
+      cellSizeInPixels,
     };
   },
 };
 </script>
 
 <template>
-  <Grid :joint-matrix="state.jointMatrix" :hidden="state.hidden" />
+  <Grid
+    :height="state.height"
+    :width="state.width"
+    :joint-matrix="state.jointMatrix"
+    :hidden="state.hidden"
+    :dot-size-in-pixels="state.dotSizeInPixels"
+    :cell-size-in-pixels="cellSizeInPixels"
+  />
 </template>

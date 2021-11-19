@@ -15,12 +15,12 @@ export default {
   },
   setup() {
     const dotSize = inject("dotSize");
-    const length = inject("length");
+    const cellSize = inject("cellSize");
     const mazeColor = inject("mazeColor");
 
     return {
       dotSize,
-      length,
+      cellSize,
       mazeColor,
     };
   },
@@ -39,18 +39,18 @@ export default {
 
 <style scoped lang="scss">
 $dot-size: v-bind(dotSize);
-$length: v-bind(length);
+$cell-size: v-bind(cellSize);
 $offset: $dot-size;
-$mazeColor: v-bind(mazeColor);
+$maze-color: v-bind(mazeColor);
 
 .joint-line {
   position: absolute;
-  background-color: $mazeColor;
+  background-color: $maze-color;
   transition: 0.5s all ease-in-out;
   &--top {
     top: 0;
     left: $offset;
-    height: $length;
+    height: $cell-size;
     width: $dot-size;
     transform-origin: 0px 0px;
     transform: rotate(180deg);
@@ -62,7 +62,7 @@ $mazeColor: v-bind(mazeColor);
     top: 0;
     left: $offset;
     height: $dot-size;
-    width: $length;
+    width: $cell-size;
   }
   &--right#{&}--hidden {
     width: 0px;
@@ -70,7 +70,7 @@ $mazeColor: v-bind(mazeColor);
   &--bottom {
     top: $offset;
     left: 0;
-    height: $length;
+    height: $cell-size;
     width: $dot-size;
   }
   &--bottom#{&}--hidden {
@@ -80,7 +80,7 @@ $mazeColor: v-bind(mazeColor);
     top: $offset;
     left: 0;
     height: $dot-size;
-    width: $length;
+    width: $cell-size;
     transform-origin: 0 0;
     transform: rotate(180deg);
   }

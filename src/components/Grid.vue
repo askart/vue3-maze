@@ -12,17 +12,13 @@ export default {
     GridBorder,
   },
   props: {
-    verticalCellsCount: {
+    height: {
       type: Number,
-      default: 10,
+      default: null,
     },
-    horizontalCellsCount: {
+    width: {
       type: Number,
-      default: 15,
-    },
-    dotSize: {
-      type: String,
-      default: "2px",
+      default: null,
     },
     jointMatrix: {
       type: Array,
@@ -32,19 +28,21 @@ export default {
       type: Boolean,
       default: false,
     },
+    dotSizeInPixels: {
+      type: String,
+      default: "",
+    },
+    cellSizeInPixels: {
+      type: String,
+      default: "",
+    },
   },
   setup(props) {
-    const length = `calc(50px - ${props.dotSize})`;
-
-    provide("verticalCellsCount", props.verticalCellsCount);
-    provide("horizontalCellsCount", props.horizontalCellsCount);
-    provide("dotSize", props.dotSize);
-    provide("length", length);
+    provide("verticalCellsCount", props.height);
+    provide("horizontalCellsCount", props.width);
+    provide("dotSize", props.dotSizeInPixels);
+    provide("cellSize", props.cellSizeInPixels);
     provide("mazeColor", "gray");
-
-    return {
-      length,
-    };
   },
 };
 </script>
@@ -75,7 +73,7 @@ export default {
 </template>
 
 <style scoped lang="scss">
-$length: v-bind(length);
+$cell-size: v-bind(cellSizeInPixels);
 
 .grid {
   flex: 0 1 auto;
@@ -86,12 +84,12 @@ $length: v-bind(length);
   display: flex;
 }
 .grid__row:first-child > .grid__joint {
-  margin-top: $length;
+  margin-top: $cell-size;
 }
 .grid__joint {
-  margin: 0 $length $length 0;
+  margin: 0 $cell-size $cell-size 0;
   &:first-child {
-    margin-left: $length;
+    margin-left: $cell-size;
   }
 }
 </style>

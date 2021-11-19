@@ -17,14 +17,14 @@ export default {
     const verticalCellsCount = inject("verticalCellsCount");
     const horizontalCellsCount = inject("horizontalCellsCount");
     const dotSize = inject("dotSize");
-    const length = inject("length");
+    const cellSize = inject("cellSize");
     const mazeColor = inject("mazeColor");
 
     return {
       verticalCellsCount,
       horizontalCellsCount,
       dotSize,
-      length,
+      cellSize,
       mazeColor,
     };
   },
@@ -45,21 +45,22 @@ export default {
 $vertical-cells-count: v-bind(verticalCellsCount);
 $horizontal-cells-count: v-bind(horizontalCellsCount);
 $dot-size: v-bind(dotSize);
-$length: v-bind(length);
+$cell-size: v-bind(cellSize);
 $border-height: calc(
-  ($length * $vertical-cells-count) + ($dot-size * ($vertical-cells-count - 1))
+  calc($cell-size * $vertical-cells-count) +
+    calc($dot-size * ($vertical-cells-count - 1))
 );
 $border-width: calc(
-  ($length * ($horizontal-cells-count - 1)) +
-    ($dot-size * ($horizontal-cells-count - 1))
+  calc($cell-size * ($horizontal-cells-count - 1)) +
+    calc($dot-size * ($horizontal-cells-count - 1))
 );
-$mazeColor: v-bind(mazeColor);
+$maze-color: v-bind(mazeColor);
 
 .grid-border {
   position: absolute;
   height: $dot-size;
   width: $dot-size;
-  background-color: $mazeColor;
+  background-color: $maze-color;
   transition: 0.5s all ease-in-out;
   &--top {
     top: 0;
