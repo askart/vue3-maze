@@ -30,9 +30,9 @@ export default {
 <template>
   <div
     :class="[
-      'joint-line',
-      `joint-line--${position}`,
-      { 'joint-line--hidden': hidden },
+      'node__edge',
+      `node__edge--${position}`,
+      { 'node__edge--hidden': hidden },
     ]"
   />
 </template>
@@ -43,7 +43,7 @@ $cell-size: v-bind(cellSize);
 $offset: $dot-size;
 $maze-color: v-bind(mazeColor);
 
-.joint-line {
+.node__edge {
   position: absolute;
   background-color: $maze-color;
   transition: 0.5s all ease-in-out;

@@ -8,7 +8,7 @@ export default {
         return ["top", "right", "bottom", "left"].includes(value);
       },
     },
-    hidden: {
+    visible: {
       type: Boolean,
       default: false,
     },
@@ -33,11 +33,7 @@ export default {
 
 <template>
   <div
-    :class="[
-      'grid-border',
-      `grid-border--${position}`,
-      { 'grid-border--hidden': hidden },
-    ]"
+    :class="['border', `border--${position}`, { 'border--visible': visible }]"
   />
 </template>
 
@@ -56,7 +52,7 @@ $border-width: calc(
 );
 $maze-color: v-bind(mazeColor);
 
-.grid-border {
+.border {
   position: absolute;
   height: $dot-size;
   width: $dot-size;
@@ -66,28 +62,28 @@ $maze-color: v-bind(mazeColor);
     top: 0;
     right: 0;
   }
-  &--top#{&}--hidden {
+  &--top#{&}--visible {
     width: $border-width;
   }
   &--right {
     top: 0;
     right: 0;
   }
-  &--right#{&}--hidden {
+  &--right#{&}--visible {
     height: $border-height;
   }
   &--bottom {
     bottom: 0;
     left: 0;
   }
-  &--bottom#{&}--hidden {
+  &--bottom#{&}--visible {
     width: $border-width;
   }
   &--left {
     bottom: 0;
     left: 0;
   }
-  &--left#{&}--hidden {
+  &--left#{&}--visible {
     height: $border-height;
   }
 }

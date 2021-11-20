@@ -15,8 +15,8 @@ export default {
 </script>
 
 <template>
-  <div class="grid-joint">
-    <slot></slot>
+  <div class="node">
+    <slot />
   </div>
 </template>
 
@@ -24,7 +24,7 @@ export default {
 $dot-size: v-bind(dotSize);
 $maze-color: v-bind(mazeColor);
 
-.grid-joint {
+.node {
   position: relative;
   display: inline-block;
   height: $dot-size;

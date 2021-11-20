@@ -1,11 +1,15 @@
 <script>
 import { computed, reactive } from "@vue/reactivity";
-import { onBeforeUnmount } from "@vue/runtime-core";
-import Grid from "./Grid.vue";
+import { onBeforeUnmount, provide } from "@vue/runtime-core";
+import MazeNode from "./MazeNode.vue";
+import MazeNodeEdge from "./MazeNodeEdge.vue";
+import MazeBorder from "./MazeBorder.vue";
 
 export default {
   components: {
-    Grid,
+    MazeNode,
+    MazeNodeEdge,
+    MazeBorder,
   },
   setup() {
     const DX = { RIGHT: 1, LEFT: -1, TOP: 0, BOTTOM: 0 };
@@ -19,46 +23,16 @@ export default {
     };
 
     const state = reactive({
-      height: 10,
-      width: 10,
-      jointMatrix: [],
-      hidden: false,
-      dotSizeInPixels: "2px",
+      nodes: [],
+      borderVisible: false,
     });
 
-    const cellSizeInPixels = computed(
-      () => `calc(40px - ${state.dotSizeInPixels})`
-    );
+    const height = 10;
+    const width = 10;
+    const dotSizeInPixels = "2px";
+    const cellSizeInPixels = computed(() => `calc(40px - ${dotSizeInPixels})`);
 
     let initMazeTimeout, buildMazeTimeout;
-
-    const initMaze = (height, width) => {
-      const jointMatrix = [];
-      for (let y = 1; y < height; y++) {
-        jointMatrix[y - 1] = [];
-        for (let x = 1; x < width; x++) {
-          jointMatrix[y - 1][x - 1] = {
-            LEFT: false,
-            TOP: false,
-            RIGHT: false,
-            BOTTOM: false,
-          };
-        }
-      }
-      state.jointMatrix = jointMatrix;
-      initMazeTimeout = setTimeout(() => {
-        buildMaze(height, width);
-        state.hidden = true;
-      }, 1000);
-    };
-
-    const buildMaze = (height, width) => {
-      const grid = makePath(height, width);
-      drawMaze(grid, height, width);
-      buildMazeTimeout = setTimeout(() => {
-        buildMaze(height, width);
-      }, 5000);
-    };
 
     onBeforeUnmount(() => {
       clearTimeout(initMazeTimeout);
@@ -67,16 +41,44 @@ export default {
       buildMazeTimeout = null;
     });
 
-    const makePath = (height, width) => {
-      const grid = makeGrid(height, width, 0);
-      return makePathDepth(0, 0, grid, height, width);
+    const initMaze = (height, width) => {
+      const nodes = [];
+      for (let y = 1; y < height; y++) {
+        nodes[y - 1] = [];
+        for (let x = 1; x < width; x++) {
+          nodes[y - 1][x - 1] = {
+            LEFT: false,
+            TOP: false,
+            RIGHT: false,
+            BOTTOM: false,
+          };
+        }
+      }
+      state.nodes = nodes;
+      initMazeTimeout = setTimeout(() => {
+        buildMaze(height, width);
+        state.borderVisible = true;
+      }, 1000);
     };
 
-    const makeGrid = (height, width, val) => {
+    const buildMaze = (height, width) => {
+      const maze = makeMazePath(height, width);
+      drawMaze(maze, height, width);
+      buildMazeTimeout = setTimeout(() => {
+        buildMaze(height, width);
+      }, 5000);
+    };
+
+    const makeMazePath = (height, width) => {
+      const maze = clearMaze(height, width, 0);
+      return makeMazePathDepth(0, 0, maze, height, width);
+    };
+
+    const clearMaze = (height, width, val) => {
       return Array.from(Array(height), () => new Array(width).fill(val));
     };
 
-    const makePathDepth = (cx, cy, grid, height, width) => {
+    const makeMazePathDepth = (cx, cy, maze, height, width) => {
       const directions = getDirections();
       directions.forEach((dir) => {
         const nx = cx + DX[dir],
@@ -86,14 +88,14 @@ export default {
           ny < height &&
           nx >= 0 &&
           nx < width &&
-          grid[ny][nx] == 0
+          maze[ny][nx] == 0
         ) {
-          grid[cy][cx] |= VALUE[dir];
-          grid[ny][nx] |= VALUE[OPPOSITE[dir]];
-          makePathDepth(nx, ny, grid, height, width);
+          maze[cy][cx] |= VALUE[dir];
+          maze[ny][nx] |= VALUE[OPPOSITE[dir]];
+          makeMazePathDepth(nx, ny, maze, height, width);
         }
       });
-      return grid;
+      return maze;
     };
 
     const getDirections = () => {
@@ -108,23 +110,29 @@ export default {
       return array;
     };
 
-    const drawMaze = (grid, height, width) => {
-      const jointMatrix = [];
+    const drawMaze = (maze, height, width) => {
+      const nodes = [];
       for (let y = 1; y < height; y++) {
-        jointMatrix[y - 1] = [];
+        nodes[y - 1] = [];
         for (let x = 1; x < width; x++) {
-          const joint = {};
-          joint.LEFT = (grid[y - 1][x - 1] & VALUE["BOTTOM"]) == 0;
-          joint.TOP = (grid[y - 1][x - 1] & VALUE["RIGHT"]) == 0;
-          joint.RIGHT = (grid[y][x] & VALUE["TOP"]) == 0;
-          joint.BOTTOM = (grid[y][x] & VALUE["LEFT"]) == 0;
-          jointMatrix[y - 1][x - 1] = joint;
+          const node = {};
+          node.LEFT = (maze[y - 1][x - 1] & VALUE["BOTTOM"]) == 0;
+          node.TOP = (maze[y - 1][x - 1] & VALUE["RIGHT"]) == 0;
+          node.RIGHT = (maze[y][x] & VALUE["TOP"]) == 0;
+          node.BOTTOM = (maze[y][x] & VALUE["LEFT"]) == 0;
+          nodes[y - 1][x - 1] = node;
         }
       }
-      state.jointMatrix = jointMatrix;
+      state.nodes = nodes;
     };
 
-    initMaze(state.height, state.width);
+    provide("verticalCellsCount", height);
+    provide("horizontalCellsCount", width);
+    provide("dotSize", dotSizeInPixels);
+    provide("cellSize", cellSizeInPixels);
+    provide("mazeColor", "gray");
+
+    initMaze(height, width);
 
     return {
       state,
@@ -135,12 +143,51 @@ export default {
 </script>
 
 <template>
-  <Grid
-    :height="state.height"
-    :width="state.width"
-    :joint-matrix="state.jointMatrix"
-    :hidden="state.hidden"
-    :dot-size-in-pixels="state.dotSizeInPixels"
-    :cell-size-in-pixels="cellSizeInPixels"
-  />
+  <div class="maze">
+    <div
+      v-for="(row, rowIndex) in state.nodes"
+      :key="rowIndex"
+      class="maze__row"
+    >
+      <MazeNode
+        v-for="(node, nodeIndex) in row"
+        :key="`${rowIndex}_${nodeIndex}`"
+        class="maze__node"
+      >
+        <MazeNodeEdge position="top" :hidden="!node.TOP" />
+        <MazeNodeEdge position="right" :hidden="!node.RIGHT" />
+        <MazeNodeEdge position="bottom" :hidden="!node.BOTTOM" />
+        <MazeNodeEdge position="left" :hidden="!node.LEFT" />
+      </MazeNode>
+    </div>
+    <template v-for="pos in ['top', 'right', 'bottom', 'left']" :key="pos">
+      <MazeBorder
+        :position="pos"
+        :visible="state.borderVisible"
+        class="maze__border"
+      />
+    </template>
+  </div>
 </template>
+
+<style scoped lang="scss">
+$cell-size: v-bind(cellSizeInPixels);
+
+.maze {
+  flex: 0 1 auto;
+  position: relative;
+  background-color: white;
+}
+.maze__row {
+  display: flex;
+}
+.maze__row:first-child > .maze__node {
+  margin-top: $cell-size;
+}
+.maze__node {
+  margin: 0 $cell-size $cell-size 0;
+  &:first-child {
+    margin-left: $cell-size;
+  }
+}
+</style>
