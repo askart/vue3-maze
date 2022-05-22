@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import { defineComponent } from "vue";
 import { inject } from "@vue/runtime-core";
 
-export default {
+export default defineComponent({
   setup() {
     const dotSize = inject("dotSize");
     const mazeColor = inject("mazeColor");
@@ -11,7 +12,7 @@ export default {
       mazeColor,
     };
   },
-};
+});
 </script>
 
 <template>

@@ -1,11 +1,26 @@
-<script>
+<script lang="ts">
+import { defineComponent } from "vue";
 import { computed, reactive } from "@vue/reactivity";
 import { onBeforeUnmount, provide } from "@vue/runtime-core";
 import MazeNode from "./MazeNode.vue";
 import MazeNodeEdge from "./MazeNodeEdge.vue";
 import MazeBorder from "./MazeBorder.vue";
 
-export default {
+type Direction = "RIGHT" | "LEFT" | "TOP" | "BOTTOM";
+
+type Node = {
+  LEFT: boolean;
+  TOP: boolean;
+  RIGHT: boolean;
+  BOTTOM: boolean;
+};
+
+interface State {
+  nodes: Node[][];
+  borderVisible: boolean;
+}
+
+export default defineComponent({
   components: {
     MazeNode,
     MazeNodeEdge,
@@ -22,7 +37,7 @@ export default {
       BOTTOM: "TOP",
     };
 
-    const state = reactive({
+    const state: State = reactive({
       nodes: [],
       borderVisible: false,
     });
@@ -32,17 +47,16 @@ export default {
     const dotSizeInPixels = "2px";
     const cellSizeInPixels = computed(() => `calc(40px - ${dotSizeInPixels})`);
 
-    let initMazeTimeout, buildMazeTimeout;
+    let initMazeTimeout: number | undefined,
+      buildMazeTimeout: number | undefined;
 
     onBeforeUnmount(() => {
       clearTimeout(initMazeTimeout);
-      initMazeTimeout = null;
       clearTimeout(buildMazeTimeout);
-      buildMazeTimeout = null;
     });
 
-    const initMaze = (height, width) => {
-      const nodes = [];
+    const initMaze = (height: number, width: number) => {
+      const nodes: Node[][] = [];
       for (let y = 1; y < height; y++) {
         nodes[y - 1] = [];
         for (let x = 1; x < width; x++) {
@@ -54,33 +68,41 @@ export default {
           };
         }
       }
+
       state.nodes = nodes;
-      initMazeTimeout = setTimeout(() => {
+
+      initMazeTimeout = window.setTimeout(() => {
         buildMaze(height, width);
         state.borderVisible = true;
       }, 1000);
     };
 
-    const buildMaze = (height, width) => {
+    const buildMaze = (height: number, width: number) => {
       const maze = makeMazePath(height, width);
       drawMaze(maze, height, width);
-      buildMazeTimeout = setTimeout(() => {
+      buildMazeTimeout = window.setTimeout(() => {
         buildMaze(height, width);
       }, 5000);
     };
 
-    const makeMazePath = (height, width) => {
+    const makeMazePath = (height: number, width: number) => {
       const maze = clearMaze(height, width, 0);
       return makeMazePathDepth(0, 0, maze, height, width);
     };
 
-    const clearMaze = (height, width, val) => {
+    const clearMaze = (height: number, width: number, val: number) => {
       return Array.from(Array(height), () => new Array(width).fill(val));
     };
 
-    const makeMazePathDepth = (cx, cy, maze, height, width) => {
+    const makeMazePathDepth = (
+      cx: number,
+      cy: number,
+      maze: number[][],
+      height: number,
+      width: number
+    ) => {
       const directions = getDirections();
-      directions.forEach((dir) => {
+      directions.forEach((dir: Direction) => {
         const nx = cx + DX[dir],
           ny = cy + DY[dir];
         if (
@@ -91,7 +113,7 @@ export default {
           maze[ny][nx] == 0
         ) {
           maze[cy][cx] |= VALUE[dir];
-          maze[ny][nx] |= VALUE[OPPOSITE[dir]];
+          maze[ny][nx] |= VALUE[OPPOSITE[dir] as Direction];
           makeMazePathDepth(nx, ny, maze, height, width);
         }
       });
@@ -102,7 +124,7 @@ export default {
       return shuffle(["TOP", "BOTTOM", "RIGHT", "LEFT"]);
     };
 
-    const shuffle = (array) => {
+    const shuffle = (array: Direction[]) => {
       for (let i = array.length - 1; i > 0; i--) {
         let j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
@@ -110,16 +132,18 @@ export default {
       return array;
     };
 
-    const drawMaze = (maze, height, width) => {
-      const nodes = [];
+    const drawMaze = (maze: number[][], height: number, width: number) => {
+      const nodes: Node[][] = [];
       for (let y = 1; y < height; y++) {
         nodes[y - 1] = [];
         for (let x = 1; x < width; x++) {
-          const node = {};
-          node.LEFT = (maze[y - 1][x - 1] & VALUE["BOTTOM"]) == 0;
-          node.TOP = (maze[y - 1][x - 1] & VALUE["RIGHT"]) == 0;
-          node.RIGHT = (maze[y][x] & VALUE["TOP"]) == 0;
-          node.BOTTOM = (maze[y][x] & VALUE["LEFT"]) == 0;
+          const node = {
+            LEFT: (maze[y - 1][x - 1] & VALUE["BOTTOM"]) == 0,
+            TOP: (maze[y - 1][x - 1] & VALUE["RIGHT"]) == 0,
+            RIGHT: (maze[y][x] & VALUE["TOP"]) == 0,
+            BOTTOM: (maze[y][x] & VALUE["LEFT"]) == 0,
+          };
+
           nodes[y - 1][x - 1] = node;
         }
       }
@@ -139,7 +163,7 @@ export default {
       cellSizeInPixels,
     };
   },
-};
+});
 </script>
 
 <template>

@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+import { defineComponent } from "vue";
 import { inject } from "@vue/runtime-core";
 
-export default {
+export default defineComponent({
   props: {
     position: {
-      validator(value) {
+      validator(value: string) {
         return ["top", "right", "bottom", "left"].includes(value);
       },
     },
@@ -24,7 +25,7 @@ export default {
       mazeColor,
     };
   },
-};
+});
 </script>
 
 <template>

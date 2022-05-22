@@ -1,9 +1,9 @@
-<script setup>
-import Maze from "./components/Maze.vue";
+<script setup lang="ts">
+import MazeComponent from "@/components/MazeComponent.vue";
 </script>
 
 <template>
-  <Maze />
+  <MazeComponent />
 </template>
 
 <style lang="scss">
